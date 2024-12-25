@@ -1,8 +1,7 @@
 "use client";
 
-import { Trash2, Pencil } from "lucide-react";
+import { ArrowUpDown, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
 
 const deleteTask = (id) => {};
 

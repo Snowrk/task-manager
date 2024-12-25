@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { isPast } from "date-fns";
+import { useState, useEffect } from "react";
+import { v4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClipboardPlus, SquarePlus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { SquarePlus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,9 +36,58 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function DataTable({ columns, data }) {
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+
+import { format, sub, isPast } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { toast } from "@/components/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+const FormSchema = z.object({
+  dueDate: z.date({
+    required_error: "A date of birth is required.",
+  }),
+  taskName: z
+    .string({ required_error: "Task name is required." })
+    .min(3, { message: "Task name should contain at least 3 letters." }),
+  description: z.string().optional(),
+  status: z.string(),
+  priority: z.string(),
+});
+
+export function DataTable({ columns, data, setTaskList }) {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState([]);
   const table = useReactTable({
     data,
     columns,
@@ -47,25 +97,52 @@ export function DataTable({ columns, data }) {
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
       columnFilters,
+      globalFilter,
     },
   });
+  function onSubmit(data) {
+    toast({
+      title: "You submitted the following values:",
+      description: (
+        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+        </pre>
+      ),
+    });
+    setTaskList((prev) => {
+      const obj = {
+        id: v4(),
+        taskName: data.taskName,
+        description: data.description,
+        dueDate: format(new Date(data.dueDate), "MM-dd-yyyy"),
+        status: data.status,
+        priority: data.priority,
+      };
+      return [...prev, obj];
+    });
+  }
+  const form = useForm({
+    resolver: zodResolver(FormSchema),
+  });
+  useEffect(() => {
+    if (form.formState.isSubmitSuccessful) {
+      form.reset();
+    }
+  }, [form.formState, form.reset]);
 
   return (
     <div className="w-4/6 max-w-6xl">
-      <div className="flex items-center py-4 gap-2">
-        {
-          //   <Input
-          //     placeholder="Filter status..."
-          //     value={table.getColumn("status")?.getFilterValue() ?? ""}
-          //     onChange={(event) =>
-          //       table.getColumn("status")?.setFilterValue(event.target.value)
-          //     }
-          //     className="max-w-sm"
-          //   />
-        }
+      <div className="flex items-center py-4 gap-2 flex-wrap">
+        <Input
+          placeholder="Search tasks..."
+          value={globalFilter}
+          onChange={(e) => table.setGlobalFilter(String(e.target.value))}
+          className="max-w-sm"
+        />
         <Select
           onValueChange={(event) => {
             console.log(event);
@@ -75,7 +152,7 @@ export function DataTable({ columns, data }) {
           className="max-w-sm"
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter status" />
+            <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -87,12 +164,167 @@ export function DataTable({ columns, data }) {
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={() => table.resetColumnFilters()}>
-          Clear Filter
+          Clear Filters
         </Button>
-        <Button className="ml-auto">
-          <SquarePlus />
-          Add Task
+        <Button variant="outline" onClick={() => table.resetSorting()}>
+          Clear Sorting
         </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="ml-auto">
+              <SquarePlus /> Add Task
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <SquarePlus /> Add Task
+              </DialogTitle>
+              <DialogDescription>
+                Add the task you want to keep track off.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8 flex flex-col"
+              >
+                <FormField
+                  control={form.control}
+                  name="taskName"
+                  render={({ field }) => (
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel className="text-right">Task Name</FormLabel>
+                      <Input
+                        id="taskName"
+                        value={field.value}
+                        onChange={field.onChange}
+                        className="col-span-3"
+                      />
+                      <FormMessage className="col-span-4 text-center" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel className="text-right">Description</FormLabel>
+                      <Textarea
+                        id="description"
+                        value={field.value}
+                        onChange={field.onChange}
+                        className="col-span-3"
+                      />
+                      <FormMessage className="col-span-4 text-center" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel className="text-right">Due Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left justify-start font-normal col-span-3",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="h-4 w-4 opacity-50" />
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a due date</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date < sub(new Date(), { days: 1 })
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage className="col-span-4 text-center" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel className="text-right">Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="max-w-sm"
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Set status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Status</SelectLabel>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="In Progress">
+                              In Progress
+                            </SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="col-span-4 text-center" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel className="text-right">Priority</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="max-w-sm"
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Set priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Priority</SelectLabel>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="col-span-4 text-center" />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="self-end">
+                  Add
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
       <div className="rounded-md border">
         <Table>
