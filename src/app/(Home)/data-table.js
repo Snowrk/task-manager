@@ -20,6 +20,7 @@ import {
   ColumnDef,
   SortingState,
   ColumnFiltersState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -27,6 +28,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   Table,
@@ -93,6 +101,9 @@ export function DataTable({ columns, data, setTaskList }) {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState({});
   const table = useReactTable({
     data,
     columns,
@@ -103,10 +114,12 @@ export function DataTable({ columns, data, setTaskList }) {
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnFilters,
       globalFilter,
+      columnVisibility,
     },
   });
   async function onSubmit(data) {
@@ -135,24 +148,29 @@ export function DataTable({ columns, data, setTaskList }) {
       console.log(response);
     }
     setTaskList((prev) => [...prev, obj]);
+    setOpen(false);
   }
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
+  const setDefaultValues = () => {
+    form.setValue("status", "Pending");
+  };
   useEffect(() => {
     if (form.formState.isSubmitSuccessful) {
       form.reset();
     }
-  }, [form]);
+  }, [form, form.reset, form.formState.isSubmitSuccessful]);
 
   return (
-    <div className="w-4/6 max-w-6xl">
+    <div className="w-11/12 md:w-4/6 max-w-6xl">
       <div className="flex items-center py-4 gap-2 flex-wrap">
         <Input
           placeholder="Search tasks..."
           value={globalFilter}
           onChange={(e) => table.setGlobalFilter(String(e.target.value))}
           className="max-w-sm"
+          type="search"
         />
         <Select
           onValueChange={(event) => {
@@ -180,9 +198,9 @@ export function DataTable({ columns, data, setTaskList }) {
         <Button variant="outline" onClick={() => table.resetSorting()}>
           Clear Sorting
         </Button>
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="ml-auto">
+            <Button className="ml-auto" onClick={setDefaultValues}>
               <SquarePlus /> Add Task
             </Button>
           </DialogTrigger>
@@ -235,41 +253,48 @@ export function DataTable({ columns, data, setTaskList }) {
                 <FormField
                   control={form.control}
                   name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="grid grid-cols-4 items-center gap-4">
-                      <FormLabel className="text-right">Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left justify-start font-normal col-span-3",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="h-4 w-4 opacity-50" />
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a due date</span>
-                              )}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date(1901, 0, 1)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage className="col-span-4 text-center" />
-                    </FormItem>
-                  )}
+                  render={({ field, ...props }) => {
+                    console.log(field);
+                    const closeDatePicker = (event) => {
+                      field.onChange(event);
+                      setDateOpen(false);
+                    };
+                    return (
+                      <FormItem className="grid grid-cols-4 items-center gap-4">
+                        <FormLabel className="text-right">Due Date</FormLabel>
+                        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "pl-3 text-left justify-start font-normal col-span-3",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="h-4 w-4 opacity-50" />
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a due date</span>
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={closeDatePicker}
+                              disabled={(date) => date < new Date(1901, 0, 1)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage className="col-span-4 text-center" />
+                      </FormItem>
+                    );
+                  }}
                 />
                 <FormField
                   control={form.control}
@@ -327,11 +352,10 @@ export function DataTable({ columns, data, setTaskList }) {
                     </FormItem>
                   )}
                 />
-                <DialogClose asChild>
-                  <Button type="submit" className="self-end">
-                    Add
-                  </Button>
-                </DialogClose>
+
+                <Button type="submit" className="self-end">
+                  Add
+                </Button>
               </form>
             </Form>
           </DialogContent>

@@ -56,6 +56,7 @@ const Login = (props) => {
       const response = await request.json();
       if (request.ok) {
         Cookies.set("jwtToken", response.jwtToken, { expires: 7 });
+        Cookies.set("username", username, { expires: 7 });
         router.replace("/");
       } else {
         setErr(response.err);
