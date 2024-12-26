@@ -199,13 +199,15 @@ export default function Auth() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <div className="flex items-center justify-center flex-grow">
-        {login ? (
-          <Login loading={loading} setLoading={setLoading} />
-        ) : (
-          <Register loading={loading} setLoading={setLoading} />
-        )}
-      </div>
+      <Suspense fallback={<p>Loading feed...</p>}>
+        <div className="flex items-center justify-center flex-grow">
+          {login ? (
+            <Login loading={loading} setLoading={setLoading} />
+          ) : (
+            <Register loading={loading} setLoading={setLoading} />
+          )}
+        </div>
+      </Suspense>
     </div>
   );
 }
