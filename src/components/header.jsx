@@ -29,11 +29,13 @@ const Header = () => {
           <h1>Task Manager</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Avatar>
-            <AvatarFallback>
-              {username ? `${username[0]}${username[1]}` : "0"}
-            </AvatarFallback>
-          </Avatar>
+          {pathname === "/" && (
+            <Avatar>
+              <AvatarFallback className="font-display">
+                {username ? `${username[0]}${username[1]}` : "0"}
+              </AvatarFallback>
+            </Avatar>
+          )}
 
           {pathname === "/" && (
             <Button variant="outline" onClick={logout}>
