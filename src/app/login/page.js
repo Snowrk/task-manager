@@ -188,26 +188,32 @@ const Register = (props) => {
   //   );
 };
 
-export default function Auth() {
-  // const [login, setLogin] = useState(true);
+const Wrapper = () => {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const login = searchParams.get("signup") !== "true" ? true : false;
+  return (
+    <Suspense fallback={<p>Loading feed...</p>}>
+      <div className="flex items-center justify-center flex-grow">
+        {login ? (
+          <Login loading={loading} setLoading={setLoading} />
+        ) : (
+          <Register loading={loading} setLoading={setLoading} />
+        )}
+      </div>
+    </Suspense>
+  );
+};
+
+export default function Auth() {
+  // const [login, setLogin] = useState(true);
   // useEffect(() => {
   //   setLogin(searchParams.get("signup") !== "true" ? true : false);
   // }, [searchParams.get("signup")]);
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <Suspense fallback={<p>Loading feed...</p>}>
-        <div className="flex items-center justify-center flex-grow">
-          {login ? (
-            <Login loading={loading} setLoading={setLoading} />
-          ) : (
-            <Register loading={loading} setLoading={setLoading} />
-          )}
-        </div>
-      </Suspense>
+      <Wrapper />
     </div>
   );
 }
