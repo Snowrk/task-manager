@@ -128,7 +128,7 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
     if (form.formState.isSubmitSuccessful) {
       form.reset();
     }
-  }, [form.formState, form.reset]);
+  }, [form]);
   return (
     <Dialog>
       <DialogTrigger asChild>

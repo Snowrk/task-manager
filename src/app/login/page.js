@@ -193,15 +193,13 @@ const Wrapper = () => {
   const searchParams = useSearchParams();
   const login = searchParams.get("signup") !== "true" ? true : false;
   return (
-    <Suspense fallback={<p>Loading feed...</p>}>
-      <div className="flex items-center justify-center flex-grow">
-        {login ? (
-          <Login loading={loading} setLoading={setLoading} />
-        ) : (
-          <Register loading={loading} setLoading={setLoading} />
-        )}
-      </div>
-    </Suspense>
+    <div className="flex items-center justify-center flex-grow">
+      {login ? (
+        <Login loading={loading} setLoading={setLoading} />
+      ) : (
+        <Register loading={loading} setLoading={setLoading} />
+      )}
+    </div>
   );
 };
 
@@ -213,7 +211,9 @@ export default function Auth() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <Wrapper />
+      <Suspense fallback={<p>Loading feed...</p>}>
+        <Wrapper />
+      </Suspense>
     </div>
   );
 }

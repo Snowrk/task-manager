@@ -151,7 +151,7 @@ export function DataTable({ columns, data, setTaskList }) {
     if (form.formState.isSubmitSuccessful) {
       form.reset();
     }
-  }, [form.formState, form.reset]);
+  }, [form]);
 
   return (
     <div className="w-4/6 max-w-6xl">
