@@ -212,7 +212,7 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < sub(new Date(), { days: 1 })}
+                        disabled={(date) => date < new Date(1901, 0, 1)
                         initialFocus
                       />
                     </PopoverContent>
