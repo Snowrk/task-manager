@@ -3,7 +3,9 @@ This is a personal project built with Next.js
 ## Getting Started
 
 To run this project locally you need the backend server.
+
 Set up the backend server by visiting https://github.com/Snowrk/task-manager-server.git
+
 After the backend setup is completed create a .env file in root directory and add the below code.
 
 ```
