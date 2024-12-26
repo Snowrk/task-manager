@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SquarePlus } from "lucide-react";
+import Cookies from "js-cookie";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
@@ -72,6 +74,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+const uri = process.env.NEXT_PUBLIC_API;
+
 const FormSchema = z.object({
   dueDate: z.date({
     required_error: "A date of birth is required.",
@@ -85,6 +89,7 @@ const FormSchema = z.object({
 });
 
 export function DataTable({ columns, data, setTaskList }) {
+  const jwtToken = Cookies.get("jwtToken");
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState([]);
@@ -104,7 +109,7 @@ export function DataTable({ columns, data, setTaskList }) {
       globalFilter,
     },
   });
-  function onSubmit(data) {
+  async function onSubmit(data) {
     toast({
       title: "You submitted the following values:",
       description: (
@@ -113,17 +118,31 @@ export function DataTable({ columns, data, setTaskList }) {
         </pre>
       ),
     });
-    setTaskList((prev) => {
-      const obj = {
-        id: v4(),
-        taskName: data.taskName,
-        description: data.description,
-        dueDate: format(new Date(data.dueDate), "MM-dd-yyyy"),
-        status: data.status,
-        priority: data.priority,
-      };
-      return [...prev, obj];
-    });
+    const obj = {
+      id: v4(),
+      taskName: data.taskName,
+      description: data.description,
+      dueDate: format(new Date(data.dueDate), "MM-dd-yyyy"),
+      status: data.status,
+      priority: data.priority,
+    };
+    const url = `${uri}/tasks`;
+    const options = {
+      method: "POST",
+      body: JSON.stringify(obj),
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${jwtToken}`,
+      },
+    };
+    const request = await fetch(url, options);
+    const response = await request.json();
+    if (request.ok) {
+      console.log(response);
+    } else {
+      console.log(response);
+    }
+    setTaskList((prev) => [...prev, obj]);
   }
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -318,9 +337,11 @@ export function DataTable({ columns, data, setTaskList }) {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="self-end">
-                  Add
-                </Button>
+                <DialogClose asChild>
+                  <Button type="submit" className="self-end">
+                    Add
+                  </Button>
+                </DialogClose>
               </form>
             </Form>
           </DialogContent>

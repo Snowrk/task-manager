@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil } from "lucide-react";
+import Cookies from "js-cookie";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
@@ -49,6 +51,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+const uri = process.env.NEXT_PUBLIC_API;
+
 const FormSchema = z.object({
   dueDate: z.date({
     required_error: "A date of birth is required.",
@@ -64,6 +68,7 @@ const FormSchema = z.object({
 export const EditDialog = ({ id, taskList, setTaskList }) => {
   const [currentTask] = taskList.filter((item) => item.id === id);
   const currentDate = currentTask.dueDate.split("-");
+  const jwtToken = Cookies.get("jwtToken");
   const setDefaultValues = () => {
     form.setValue("taskName", currentTask.taskName);
     form.setValue("description", currentTask.description);
@@ -74,7 +79,7 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
     form.setValue("status", currentTask.status);
     form.setValue("priority", currentTask.priority);
   };
-  function onSubmit(data) {
+  async function onSubmit(data) {
     toast({
       title: "You submitted the following values:",
       description: (
@@ -83,6 +88,28 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
         </pre>
       ),
     });
+    const url = `${uri}/tasks/${id}`;
+    const options = {
+      method: "PUT",
+      body: JSON.stringify({
+        taskName: data.taskName,
+        description: data.description,
+        dueDate: format(new Date(data.dueDate), "MM-dd-yyyy"),
+        status: data.status,
+        priority: data.priority,
+      }),
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${jwtToken}`,
+      },
+    };
+    const request = await fetch(url, options);
+    const response = await request.json();
+    if (request.ok) {
+      console.log(response);
+    } else {
+      console.log(response);
+    }
     setTaskList((prev) => {
       const temp = [...prev];
       const idx = temp.findIndex((item) => item.id === id);
@@ -248,9 +275,11 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="self-end">
-              Save changes
-            </Button>
+            <DialogClose asChild>
+              <Button type="submit" className="self-end">
+                Save changes
+              </Button>
+            </DialogClose>
           </form>
         </Form>
       </DialogContent>

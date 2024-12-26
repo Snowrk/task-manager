@@ -1,50 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import { DataTable } from "./data-table";
 import { ArrowUpDown, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "./editDialog";
+import { DeleteBtn } from "@/components/deleteBtn";
+import Cookies from "js-cookie";
+
+const uri = process.env.NEXT_PUBLIC_API;
 
 export default function Home() {
-  const [taskList, setTaskList] = useState([
-    {
-      id: "728ed52f",
-      taskName: "work",
-      status: "Completed",
-      dueDate: "12-25-2024",
-      description: "complete your work",
-      priority: "High",
-    },
-    {
-      id: "738ed52f",
-      taskName: "assignment",
-      status: "Pending",
-      dueDate: "12-26-2024",
-      description: "create a task manager app",
-      priority: "High",
-    },
-    {
-      id: "748ed52f",
-      taskName: "assignment",
-      status: "Pending",
-      dueDate: "12-24-2024",
-      description: "create a task manager app",
-      priority: "Medium",
-    },
-    {
-      id: "758ed52f",
-      taskName: "assignment",
-      status: "In Progress",
-      dueDate: "12-28-2024",
-      description: "create a task manager app",
-      priority: "Low",
-    },
-    // ...
-  ]);
-
-  const deleteTask = (id) => {
+  const [taskList, setTaskList] = useState([]);
+  const jwtToken = Cookies.get("jwtToken");
+  const deleteTask = async (id) => {
+    const url = `${uri}/tasks/${id}`;
+    const options = {
+      method: "DELETE",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${jwtToken}`,
+      },
+    };
+    const request = await fetch(url, options);
+    const response = await request.json();
+    if (request.ok) {
+      console.log(response);
+    } else {
+      console.log(response);
+    }
     setTaskList((prev) => [...prev.filter((item) => item.id !== id)]);
   };
 
@@ -117,11 +102,7 @@ export default function Home() {
       cell: ({ row }) => {
         const data = row.original;
 
-        return (
-          <Button variant="ghost" onClick={() => deleteTask(data.id)}>
-            <Trash2 />
-          </Button>
-        );
+        return <DeleteBtn deleteTask={deleteTask} id={data.id} />;
       },
     },
     {
@@ -140,6 +121,26 @@ export default function Home() {
       },
     },
   ];
+  useEffect(() => {
+    const getData = async () => {
+      const url = `${uri}/tasks`;
+      const options = {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${jwtToken}`,
+        },
+      };
+      const request = await fetch(url, options);
+      const response = await request.json();
+      if (request.ok) {
+        setTaskList(response);
+      } else {
+        console.log("error");
+      }
+    };
+    getData();
+  }, [setTaskList, jwtToken]);
   return (
     <div className="flex flex-col h-screen">
       <Header />
