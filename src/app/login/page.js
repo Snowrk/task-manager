@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, Suspense } from "react";
 import Cookies from "js-cookie";
 import styles from "./page.module.css";
 import { LoginForm } from "@/components/login-form";
