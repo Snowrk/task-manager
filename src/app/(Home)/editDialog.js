@@ -80,14 +80,6 @@ export const EditDialog = ({ id, taskList, setTaskList }) => {
     form.setValue("priority", currentTask.priority);
   };
   async function onSubmit(data) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
     const url = `${uri}/tasks/${id}`;
     const options = {
       method: "PUT",
